@@ -21,7 +21,6 @@ public class User {
     private String lastName;
     private String email;
     private String password;
-    @Column(columnDefinition = "VARCHAR(10) NOT NULL CHECK (Role IN('customer', 'admin', 'master'))")
     private String role;
     @Temporal(TemporalType.TIMESTAMP)
     private Date insertionDate;

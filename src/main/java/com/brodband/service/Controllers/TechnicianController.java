@@ -29,10 +29,14 @@ public class TechnicianController {
     @PatchMapping("/UpdateTechnicianAddress")
     public ResponseEntity<BasicMessageDTO> updateAddress(@RequestBody AdminAddressRequestDTO r) {
         Optional<Address> address = addressRepository.getAddressByUserID(r.getUserID());
+        Address a;
         if(!address.isPresent()) {
-            return new ResponseEntity<>(new BasicMessageDTO(false, "User information not found"), HttpStatus.OK);
+            a = new Address();
+            //return new ResponseEntity<>(new BasicMessageDTO(false, "User information not found"), HttpStatus.OK);
+        } else {
+            a = address.get();
         }
-        Address a = address.get();
+
         a.setUserID(r.getUserID());
         a.setFirstName(r.getFirstName());
         a.setLastName(r.getLastName());
@@ -79,8 +83,8 @@ public class TechnicianController {
                 true,
                 "all data",
                 getTicketsRequest.getPageNumber(),
-                Long.valueOf(ticketPage.getNumberOfElements()),
-                Long.valueOf(ticketPage.getTotalPages()),
+                (long) ticketPage.getNumberOfElements(),
+                (long) ticketPage.getTotalPages(),
                 ticketPage.stream().toList()
         ), HttpStatus.OK);
     }

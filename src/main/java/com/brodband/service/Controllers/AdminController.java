@@ -3,8 +3,12 @@ package com.brodband.service.Controllers;
 import com.brodband.service.DTO.*;
 import com.brodband.service.Models.Address;
 import com.brodband.service.Models.Product;
+import com.brodband.service.Models.Ticket;
+import com.brodband.service.Models.User;
 import com.brodband.service.Repositories.AddressRepository;
 import com.brodband.service.Repositories.ProductRepository;
+import com.brodband.service.Repositories.TicketRepository;
+import com.brodband.service.Repositories.UserRepository;
 import com.brodband.service.Services.FileUploadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -34,14 +38,22 @@ public class AdminController {
     @Autowired
     private FileUploadService fileUploadService;
 
+    @Autowired
+    UserRepository userRepository;
+    @Autowired
+    TicketRepository ticketRepository;
+
     @Operation(summary = "Used to update address", security = @SecurityRequirement(name = "bearerAuth"))
     @PatchMapping("/UpdateAdminAddress")
     public ResponseEntity<BasicMessageDTO> updateAddress(@RequestBody AdminAddressRequestDTO r) {
         Optional<Address> address = addressRepository.getAddressByUserID(r.getUserID());
+        Address a;
         if(!address.isPresent()) {
-            return new ResponseEntity<>(new BasicMessageDTO(false, "User information not found"), HttpStatus.OK);
+            a = new Address();
+            //return new ResponseEntity<>(new BasicMessageDTO(false, "User information not found"), HttpStatus.OK);
+        } else {
+            a = address.get();
         }
-        Address a = address.get();
         a.setUserID(r.getUserID());
         a.setFirstName(r.getFirstName());
         a.setLastName(r.getLastName());
@@ -146,5 +158,48 @@ public class AdminController {
         }
         return new ResponseEntity<>( new BasicMessageDTO(false, "Product not found")
                 , HttpStatus.NO_CONTENT);
+    }
+    @Operation( security = @SecurityRequirement(name = "bearerAuth"))
+    @PostMapping("/GetTechnicianList")
+    public ResponseEntity<BasicMessageWithDataDTO<GetTechnicianList>> getTechnicianList(@RequestBody GetTechnicianListRequest r) {
+        BasicMessageWithDataDTO response = new BasicMessageWithDataDTO();
+
+        response.setIsSuccess(true);
+        response.setMessage("");
+        List<GetTechnicianList> getTechnicianLists =  userRepository.findAllByRoleIgnoreCase("technician").stream().map(user-> {
+            Optional<Address> address = addressRepository.findByCityIgnoreCaseAndUserID(r.getCity(),user.getUserId());
+            if(address.isPresent()){
+                GetTechnicianList getTechnicianList = new GetTechnicianList();
+                getTechnicianList.setTechnicianID(user.getUserId());
+                getTechnicianList.setTechnicianName(user.getFirstName() + " "+user.getLastName());
+                return getTechnicianList;
+            }
+            return null;
+        }).filter(item-> item != null).toList();
+        response.setData(getTechnicianLists);
+        return new ResponseEntity<>( response, HttpStatus.OK);
+    }
+    @Operation(security = @SecurityRequirement(name = "bearerAuth"))
+    @PostMapping("/UpdateTicket")
+    public ResponseEntity<BasicMessageDTO> deleteProduct(@RequestBody UpdateTicketRequest r) {
+        BasicMessageDTO basicMessageDTO = new BasicMessageDTO(true, "Update Ticket Successfully");
+        Optional<Ticket> ticket = ticketRepository.findById(r.getTicketID());
+        if(ticket.isPresent()){
+            Ticket t = ticket.get();
+            t.setStatus(r.getStatus());
+            t.setAssigner(r.getAssigner());
+            t.setCity(r.getCity());
+            t.setDescription(r.getDescription());
+            t.setUserID(r.getUserID());
+            t.setReportor(r.getReportor());
+            t.setPlanType(r.getPlanType());
+            t.setRaiseType(r.getRaiseType());
+            t.setSummary(r.getSummary());
+            ticketRepository.save(t);
+        } else {
+            basicMessageDTO.setMessage("Ticket not found");
+            basicMessageDTO.setIsSuccess(false);
+        }
+        return new ResponseEntity<>(basicMessageDTO, HttpStatus.OK);
     }
 }
