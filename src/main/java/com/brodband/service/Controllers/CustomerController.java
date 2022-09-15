@@ -106,7 +106,10 @@ public class CustomerController {
     @PostMapping("/PurchaseProduct")
     public ResponseEntity<BasicMessageDTO> purchaseProduct(@RequestBody PurchaseProductRequestDTO purchaseProductRequestDTO){
         BasicMessageDTO basicMessageDTO = new BasicMessageDTO(true, "Purchase Product Successfully");
-        PurchaseProduct purchaseProduct = this.mapper.map(purchaseProductRequestDTO, PurchaseProduct.class);
+        PurchaseProduct purchaseProduct = new PurchaseProduct();
+        purchaseProduct.setProductID(purchaseProductRequestDTO.getProductID());
+        purchaseProduct.setProductType(purchaseProductRequestDTO.getProductType());
+        purchaseProduct.setUserID(purchaseProductRequestDTO.getUserID());
         purchaseProduct.setInsertionDate(new Date());
         purchaseProductRepository.save(purchaseProduct);
         return new ResponseEntity<>(basicMessageDTO, HttpStatus.OK);
@@ -115,15 +118,17 @@ public class CustomerController {
 
     @Operation(security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping("/GetPurchaseProduct")
-    public ResponseEntity<PaginationResponseDTO<PurchaseProduct>> getPurchaseProduct(@RequestBody GetPurchaseProductRequestDTO paginationWithUserDTO){
-        Page<PurchaseProduct> purchaseProducts = purchaseProductRepository.findAllByProductType( paginationWithUserDTO.getProductType() ,PageRequest.of(paginationWithUserDTO.getPageNumber() -1, paginationWithUserDTO.getNumberOfRecordPerPage()));
+    public ResponseEntity<PaginationResponseDTO<PurchaseProduct>> getPurchaseProduct(@RequestBody GetPurchaseProductRequestDTO r){
+        Page<PurchaseProduct> purchaseProducts = purchaseProductRepository.findAll(  PageRequest.of(r.getPageNumber() -1, r.getNumberOfRecordPerPage()));
         return new ResponseEntity<>(new PaginationResponseDTO<>(
                 true,
                 "all data",
-                paginationWithUserDTO.getPageNumber(),
+                r.getPageNumber(),
                 Long.valueOf(purchaseProducts.getNumberOfElements()),
                 Long.valueOf(purchaseProducts.getTotalPages()),
-                purchaseProducts.stream().toList()
+                purchaseProducts.stream().filter(
+                        item-> (item.getUserID().equals(r.getUserID()) && item.getProductType().equalsIgnoreCase(r.getProductType()))
+                ).toList()
         ), HttpStatus.OK);
     }
 

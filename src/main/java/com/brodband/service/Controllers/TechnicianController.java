@@ -75,9 +75,7 @@ public class TechnicianController {
     @Operation(summary = "Get address by userid", security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping("/GetTickets")
     public ResponseEntity<PaginationResponseDTO<Ticket>> getTickets(@RequestBody GetTicketsRequest getTicketsRequest) {
-        Page<Ticket> ticketPage = ticketRepository.findAllByAssignerIgnoreCaseAndPlanType(
-                getTicketsRequest.getTechnicianName(),
-                getTicketsRequest.getType(),
+        Page<Ticket> ticketPage = ticketRepository.findAll(
                 PageRequest.of(getTicketsRequest.getPageNumber() -1, getTicketsRequest.getNumberOfRecordPerPage()));
         return new ResponseEntity<>(new PaginationResponseDTO<>(
                 true,
@@ -85,7 +83,10 @@ public class TechnicianController {
                 getTicketsRequest.getPageNumber(),
                 (long) ticketPage.getNumberOfElements(),
                 (long) ticketPage.getTotalPages(),
-                ticketPage.stream().toList()
+                ticketPage.stream().filter(
+                        item->(item.getAssigner().equalsIgnoreCase(getTicketsRequest.getTechnicianName()) &&
+                                item.getStatus().equalsIgnoreCase(getTicketsRequest.getType()))
+                ).toList()
         ), HttpStatus.OK);
     }
 }

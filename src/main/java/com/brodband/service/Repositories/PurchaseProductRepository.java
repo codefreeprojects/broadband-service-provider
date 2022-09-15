@@ -6,5 +6,5 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PurchaseProductRepository extends JpaRepository<PurchaseProduct, Long> {
-    Page<PurchaseProduct> findAllByProductType(String type, Pageable pageable);
+    Page<PurchaseProduct> findAllByUserID(Long userId, Pageable pageable);
 }
